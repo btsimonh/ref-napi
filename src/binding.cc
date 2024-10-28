@@ -140,7 +140,7 @@ class InstanceData final : public RefNapi::Instance {
     if (it != pointer_to_orig_buffer.end())
       ab = it->second.ab.Value();
 
-    if (ab.IsEmpty()) {
+    if (ab.IsEmpty() || (ab.ByteLength() < length)) {
       // this ALWAYS creates an arraybuffer of 1Gbyte?
       //length = std::max<size_t>(length, kMaxLength);
       length = std::min<size_t>(length, kMaxLength);
@@ -168,8 +168,15 @@ class InstanceData final : public RefNapi::Instance {
  */
 
 Value WrapPointer(Env env, char* ptr, size_t length) {
-  if (ptr == nullptr)
+  if (ptr == nullptr) {
     length = 0;
+  } else if (length == 0) {
+    // If length is 0 N-API doesn't guarantee it will save/restore ptr normally.
+    // For example, see https://nodejs.org/api/n-api.html#napi_get_typedarray_info
+    // "[out] data: ... If the length of the array is 0, this may be NULL or any
+    // other pointer value."
+    length = 1;
+  }
 
   InstanceData* data;
   if (ptr != nullptr && (data = InstanceData::Get(env)) != nullptr) {
