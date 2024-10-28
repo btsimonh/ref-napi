@@ -141,7 +141,9 @@ class InstanceData final : public RefNapi::Instance {
       ab = it->second.ab.Value();
 
     if (ab.IsEmpty()) {
-      length = std::max<size_t>(length, kMaxLength);
+      // this ALWAYS creates an arraybuffer of 1Gbyte?
+      //length = std::max<size_t>(length, kMaxLength);
+      length = std::min<size_t>(length, kMaxLength);
       ab = Buffer<char>::New(env, ptr, length, [this](Env env, char* ptr) {
         UnregisterArrayBuffer(ptr);
       }).ArrayBuffer();
